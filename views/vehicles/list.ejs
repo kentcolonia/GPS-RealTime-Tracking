@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vehicle Management</title>
+    <style>
+        body { font-family: sans-serif; background-color: #f4f7f9; margin: 0; padding: 0; color: #333; }
+        .container { max-width: 1000px; margin: 40px auto; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        h1 { border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 20px; color: #1f2937; }
+        a.back-link { text-decoration: none; color: #2563eb; font-weight: 600; margin-bottom: 20px; display: block; }
+        
+        /* Message Styles */
+        .message { padding: 10px; margin-bottom: 15px; border-radius: 4px; font-weight: 600; }
+        .success { background-color: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
+        .error { background-color: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+        
+        /* Add Form */
+        .add-form { background: #f9fafb; padding: 20px; border-radius: 6px; margin-bottom: 30px; }
+        .add-form h2 { margin-top: 0; color: #4b5563; }
+        .add-form input { padding: 8px; margin-right: 10px; border: 1px solid #ccc; border-radius: 4px; width: 180px; }
+        .add-form button { background-color: #059669; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; transition: background-color 0.2s; }
+        .add-form button:hover { background-color: #047857; }
+
+        /* Table Styles */
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #eee; }
+        th { background-color: #e5e7eb; color: #333; font-weight: 600; }
+        tr:hover { background-color: #f9fafb; }
+        
+        .status-badge { padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; }
+        .status-online { background-color: #d1fae5; color: #065f46; }
+        .status-offline { background-color: #fee2e2; color: #991b1b; }
+        .status-idle { background-color: #fef3c7; color: #92400e; }
+
+        .delete-btn { background: #ef4444; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; transition: background-color 0.2s; font-size: 14px; }
+        .delete-btn:hover { background-color: #dc2626; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <a href="/dashboard" class="back-link">← Back to Dashboard</a>
+    <h1>Vehicle Management</h1>
+
+    <!-- Display Messages -->
+    <% if (error) { %>
+        <div class="message error"><%= error %></div>
+    <% } %>
+    <% if (success) { %>
+        <div class="message success"><%= success %></div>
+    <% } %>
+
+    <!-- Add New Vehicle Form -->
+    <div class="add-form">
+        <h2>Add New Vehicle</h2>
+        <form action="/vehicles/add" method="POST" style="display: flex; gap: 10px; align-items: center;">
+            <input type="text" name="plate_number" placeholder="Vehicle Name / Plate (Required)" required>
+            <input type="text" name="driver_name" placeholder="Driver Name (Optional)">
+            <input type="text" name="imei" placeholder="IMEI (Required for GPS Link)" required>
+            <button type="submit">Add Vehicle</button>
+        </form>
+    </div>
+
+    <!-- Vehicle List Table -->
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Vehicle Name / Plate</th>
+                <th>Driver</th>
+                <th>Status</th>
+                <th>Last Update</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% if (vehicles.length === 0) { %>
+                <tr><td colspan="6" style="text-align: center;">No vehicles registered yet. Add one above!</td></tr>
+            <% } else { %>
+                <% vehicles.forEach(vehicle => { %>
+                    <tr>
+                        <td><%= vehicle.id %></td>
+                        <!-- Display Plate Number/Vehicle Name -->
+                        <td><%= vehicle.plate_number || 'N/A' %></td>
+                        <td><%= vehicle.driver_name || 'N/A' %></td>
+                        <td>
+                            <span class="status-badge status-<%= vehicle.status %>"><%= vehicle.status.toUpperCase() %></span>
+                        </td>
+                        <td><%= new Date(vehicle.updated_at).toLocaleString() %></td>
+                        <td>
+                            <form action="/vehicles/delete/<%= vehicle.id %>" method="POST" onsubmit="return confirm('Are you sure you want to delete this vehicle and its logs?');">
+                                <button type="submit" class="delete-btn">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                <% }); %>
+            <% } %>
+        </tbody>
+    </table>
+</div>
+
+<!-- Simple script to check for URL query params and display messages -->
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const error = urlParams.get('error');
+        const success = urlParams.get('success');
+        
+        if (error) {
+            const container = document.querySelector('.container');
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'message error';
+            errorDiv.textContent = error;
+            container.insertBefore(errorDiv, container.querySelector('h1').nextSibling);
+        }
+        if (success) {
+            const container = document.querySelector('.container');
+            const successDiv = document.createElement('div');
+            successDiv.className = 'message success';
+            successDiv.textContent = success;
+            container.insertBefore(successDiv, container.querySelector('h1').nextSibling);
+        }
+        
+        if (error || success) {
+            history.replaceState({}, document.title, window.location.pathname);
+        }
+    });
+</script>
+
+</body>
+</html>

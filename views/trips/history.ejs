@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trip History | <%= user.username %></title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <style>
+        body { margin: 0; padding: 0; font-family: sans-serif; background-color: #f4f7f9; }
+        .main-container { display: flex; flex-direction: column; height: 100vh; }
+        .controls { 
+            padding: 15px; 
+            background-color: white; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap; /* Allows controls to wrap on smaller screens */
+        }
+        .controls label { font-weight: 600; color: #333; }
+        .controls select, .controls input, .controls button {
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .controls button {
+            background-color: #2563eb;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            border: none;
+        }
+        .controls button:hover { background-color: #1d4ed8; }
+        #map { flex-grow: 1; height: 100%; width: 100%; z-index: 1; }
+        .message { 
+            position: absolute; 
+            bottom: 20px; 
+            left: 50%; 
+            transform: translateX(-50%); 
+            padding: 10px 20px; 
+            background: rgba(0,0,0,0.7); 
+            color: white; 
+            border-radius: 5px; 
+            z-index: 1000; 
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="main-container">
+        <div class="controls">
+            <a href="/dashboard" style="text-decoration: none; color: #333; font-weight: bold;">← Dashboard</a>
+            
+            <label for="vehicleSelect">Vehicle:</label>
+            <select id="vehicleSelect">
+                <option value="">Select a Vehicle</option>
+                <% vehicles.forEach(vehicle => { %>
+                    <option value="<%= vehicle.id %>"><%= vehicle.plate_number || vehicle.imei %></option>
+                <% }); %>
+            </select>
+            
+            <label for="dateInput">Date:</label>
+            <input type="date" id="dateInput" value="<%= new Date().toISOString().slice(0, 10) %>">
+            
+            <button id="loadTripBtn">Load Trip</button>
+            
+            <!-- Trip Playback Controls (NEWLY ADDED) -->
+            <button id="playBtn" disabled>▶️ Play</button>
+            <button id="pauseBtn" disabled>⏸️ Pause</button>
+
+            <label for="speedSelect">Speed:</label>
+            <select id="speedSelect" style="width: 80px;">
+                <option value="0.5">0.5x</option>
+                <option value="1.0" selected>1x</option>
+                <option value="2.0">2x</option>
+                <option value="4.0">4x</option>
+            </select>
+        </div>
+
+        <div id="map"></div>
+        <div id="message" class="message"></div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <!-- Your Custom Trip History Logic -->
+    <script src="/js/trip-history.js"></script>
+
+</body>
+</html>

@@ -1,64 +1,94 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Live Map</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Fleet Tracking</title>
+    
+    <!-- GLOBAL ERROR HANDLER: This will alert you if the JavaScript crashes -->
+    <script>
+        window.onerror = function(msg, url, lineNo, columnNo, error) {
+            alert('JavaScript Error: ' + msg + '\nLine: ' + lineNo);
+            return false;
+        };
+    </script>
 
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet/dist/leaflet.css"
-  />
+    <!-- 1. Load Leaflet CSS -->
+    <link 
+        rel="stylesheet" 
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" 
+        onerror="alert('Error: Could not load Leaflet CSS. Check your internet connection.')"
+    />
+    
+    <style>
+        body, html { 
+            margin: 0; 
+            padding: 0; 
+            height: 100%; 
+            width: 100%;
+            overflow: hidden; /* Prevent scrollbars */
+            font-family: sans-serif;
+        }
 
-  <style>
-    #map {
-      height: 90vh;
-    }
-  </style>
+        /* 2. CRITICAL: The map container MUST have a defined height */
+        #map { 
+            height: 100vh; 
+            width: 100%; 
+            z-index: 1;
+            background-color: #f0f0f0; /* Gray background while loading */
+        }
+
+        /* Loading Text (Visible if map fails to load) */
+        .loading-text {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #666;
+            font-size: 1.2rem;
+        }
+
+        /* Optional: Back button styling */
+        .back-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 1000; /* Ensure it sits ON TOP of the map */
+            background-color: white;
+            padding: 10px 15px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            text-decoration: none;
+            color: #333;
+            font-weight: bold;
+            border: 1px solid #ddd;
+        }
+        .back-btn:hover {
+            background-color: #f0f0f0;
+        }
+    </style>
 </head>
 <body>
 
-<h2>Live Vehicle Map</h2>
-<a href="/dashboard">Back to Dashboard</a>
+    <!-- Navigation -->
+    <a href="/dashboard" class="back-btn">← Back to Dashboard</a>
 
-<div id="map"></div>
+    <!-- 3. The Map Container -->
+    <div id="map">
+        <div class="loading-text">Loading Map...</div>
+    </div>
 
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-
-<script>
-  const map = L.map("map").setView([10.3157, 123.8854], 12);
-
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    attribution: "© OpenStreetMap"
-  }).addTo(map);
-
-  let markers = {};
-
-  async function loadData() {
-    const res = await fetch("/map/data");
-    const data = await res.json();
-
-    data.forEach(v => {
-      if (!v.latitude || !v.longitude) return;
-
-      const popup = `
-        <b>${v.plate}</b><br>
-        Speed: ${v.speed || 0} km/h<br>
-        Updated: ${v.created_at || "N/A"}
-      `;
-
-      if (markers[v.id]) {
-        markers[v.id].setLatLng([v.latitude, v.longitude]);
-        markers[v.id].setPopupContent(popup);
-      } else {
-        markers[v.id] = L.marker([v.latitude, v.longitude])
-          .addTo(map)
-          .bindPopup(popup);
-      }
-    });
-  }
-
-  loadData();
-  setInterval(loadData, 5000);
-</script>
+    <!-- 4. Load Leaflet JS Library -->
+    <script 
+        src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        onerror="alert('Error: Could not load Leaflet JS library. Check your internet connection.')"
+    ></script>
+    
+    <!-- 5. Load Your Custom Map Logic -->
+    <script 
+        src="/js/realtime-map.js" 
+        onerror="alert('Error: Could not find \'/js/realtime-map.js\'. Please check if the file exists in your public/js/ folder.')"
+    ></script>
 
 </body>
 </html>

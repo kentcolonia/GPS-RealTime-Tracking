@@ -1,29 +1,34 @@
 import express from "express";
 import db from "../config/db.js";
-import requireLogin from "../middleware/auth.js";
+import requireLogin from "../middleware/auth.js"; // This must be used
 
 const router = express.Router();
 
-/* MAP PAGE */
+/* MAP PAGE - Protected by middleware */
 router.get("/", requireLogin, (req, res) => {
   res.render("map");
 });
 
-/* LATEST GPS DATA */
+/* LATEST GPS DATA - Protected by middleware */
 router.get("/data", requireLogin, async (req, res) => {
-  const [rows] = await db.query(`
-    SELECT v.id, v.plate, v.model,
-           g.latitude, g.longitude, g.speed, g.created_at
-    FROM vehicles v
-    LEFT JOIN gps_logs g ON g.id = (
-      SELECT id FROM gps_logs
-      WHERE vehicle_id = v.id
-      ORDER BY created_at DESC
-      LIMIT 1
-    )
-  `);
+  try {
+    const [rows] = await db.query(`
+      SELECT v.id, v.plate, v.model,
+            g.latitude, g.longitude, g.speed, g.created_at
+      FROM vehicles v
+      LEFT JOIN gps_logs g ON g.id = (
+        SELECT id FROM gps_logs
+        WHERE vehicle_id = v.id
+        ORDER BY created_at DESC
+        LIMIT 1
+      )
+    `);
 
-  res.json(rows);
+    res.json(rows);
+  } catch (error) {
+    console.error("Database Error on /map/data:", error);
+    res.status(500).json({ error: "Server failed to fetch map data." }); 
+  }
 });
 
 export default router;

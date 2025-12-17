@@ -1,9 +1,95 @@
-<h1>Dashboard</h1>
-<p>Welcome, <%= req.session.user.username %></p>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPS Dashboard</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f3f4f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .dashboard-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            position: relative;
+            z-index: 10;
+        }
+        h1 { color: #1f2937; margin-bottom: 0.5rem; }
+        p { color: #6b7280; margin-bottom: 2rem; }
+        ul { list-style: none; padding: 0; }
+        li { margin-bottom: 1rem; }
+        
+        /* LINK BUTTON STYLES */
+        a {
+            display: block;
+            width: 100%;
+            padding: 12px 0;
+            background-color: #2563eb;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 600;
+            transition: background-color 0.2s;
+            
+            /* FORCE CLICKABILITY */
+            position: relative;
+            z-index: 9999; /* Ensure nothing sits on top */
+            cursor: pointer;
+            pointer-events: auto;
+        }
+        
+        a:hover { background-color: #1d4ed8; }
+        a:active { transform: translateY(1px); } /* Visual feedback when clicking */
+        
+        a.logout { background-color: #ef4444; }
+        a.logout:hover { background-color: #dc2626; }
+    </style>
+</head>
+<body>
 
-<ul>
-  <li><a href="/vehicles">Vehicles</a></li>
-  <li><a href="/map">Live Map</a></li>
-  <li><a href="/logout">Logout</a></li>
-</ul>
+    <div class="dashboard-container">
+        <h1>Dashboard</h1>
+        
+        <% if (typeof user !== 'undefined' && user) { %>
+            <p>Welcome, <%= user.username %>!</p>
+        <% } else { %>
+            <p>Welcome!</p>
+        <% } %>
 
+        <ul>
+            <!-- Added IDs for debugging -->
+            <li><a href="/vehicles" id="btn-vehicles">🚛 Manage Vehicles</a></li>
+            <li><a href="/map" id="btn-map">🗺️ Live Map</a></li>
+            <li><a href="/trips">🕒 Trip History</a></li>
+            <li><a href="/logout" class="logout" id="btn-logout">🚪 Logout</a></li>
+        </ul>
+    </div>
+
+    <!-- DEBUG SCRIPT: Logs clicks to the console -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const links = document.querySelectorAll('a');
+            
+            links.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    console.log('✅ Click detected on:', link.getAttribute('href'));
+                    // If you see this log but page doesn't move, the browser is blocked or server is hanging.
+                });
+            });
+
+            console.log('Dashboard loaded. Links are ready.');
+        });
+    </script>
+</body>
+</html>
