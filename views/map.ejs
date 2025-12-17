@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Live Map</title>
+
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet/dist/leaflet.css"
+  />
+
+  <style>
+    #map {
+      height: 90vh;
+    }
+  </style>
+</head>
+<body>
+
+<h2>Live Vehicle Map</h2>
+<a href="/dashboard">Back to Dashboard</a>
+
+<div id="map"></div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<script>
+  const map = L.map("map").setView([10.3157, 123.8854], 12);
+
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution: "© OpenStreetMap"
+  }).addTo(map);
+
+  let markers = {};
+
+  async function loadData() {
+    const res = await fetch("/map/data");
+    const data = await res.json();
+
+    data.forEach(v => {
+      if (!v.latitude || !v.longitude) return;
+
+      const popup = `
+        <b>${v.plate}</b><br>
+        Speed: ${v.speed || 0} km/h<br>
+        Updated: ${v.created_at || "N/A"}
+      `;
+
+      if (markers[v.id]) {
+        markers[v.id].setLatLng([v.latitude, v.longitude]);
+        markers[v.id].setPopupContent(popup);
+      } else {
+        markers[v.id] = L.marker([v.latitude, v.longitude])
+          .addTo(map)
+          .bindPopup(popup);
+      }
+    });
+  }
+
+  loadData();
+  setInterval(loadData, 5000);
+</script>
+
+</body>
+</html>
