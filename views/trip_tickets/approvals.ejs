@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Approvals Log | FleetTrack</title>
+    <style>
+        :root { 
+            --primary: #2563eb; 
+            --success: #10b981;
+            --warning: #f59e0b;
+            --slate-800: #1e293b;
+            --slate-600: #475569;
+            --slate-100: #f1f5f9;
+        }
+        body { font-family: 'Inter', system-ui, sans-serif; background: #f8fafc; margin: 0; padding: 20px; color: #334155; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        
+        .header { background: white; padding: 25px 30px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; }
+        h1 { color: var(--slate-800); margin: 0; font-size: 1.5rem; }
+        .back-btn { text-decoration: none; color: var(--slate-600); font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 8px; }
+        .back-btn:hover { color: var(--primary); }
+
+        .card { background: white; border-radius: 16px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); overflow: hidden; }
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; padding: 15px 24px; background: #f8fafc; color: #64748b; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #e2e8f0; }
+        td { padding: 18px 24px; border-bottom: 1px solid #f1f5f9; font-size: 0.875rem; vertical-align: top; }
+        
+        .ticket-no { font-weight: 700; color: var(--primary); text-decoration: none; }
+        .ticket-no:hover { text-decoration: underline; }
+        .info-label { color: #94a3b8; font-size: 0.75rem; display: block; margin-top: 4px; }
+        
+        .status-badge { padding: 4px 10px; border-radius: 9999px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; }
+        .status-Pending { background: #fef3c7; color: #92400e; }
+        .status-Approved { background: #dcfce7; color: #166534; }
+
+        .btn-approve { 
+            display: inline-block; padding: 8px 16px; background: var(--success); color: white; 
+            text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 0.8rem;
+            transition: transform 0.1s;
+        }
+        .btn-approve:hover { transform: translateY(-1px); filter: brightness(1.1); }
+
+        .alert { padding: 15px 24px; border-radius: 12px; margin-bottom: 24px; font-weight: 500; }
+        .alert-success { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+        .alert-error { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>Full Approvals Log</h1>
+        <a href="/dashboard" class="back-btn">← Back to Dashboard</a>
+    </div>
+
+    <% if (typeof success !== 'undefined' && success) { %><div class="alert alert-success"><%= success %></div><% } %>
+    <% if (typeof error !== 'undefined' && error) { %><div class="alert alert-error"><%= error %></div><% } %>
+
+    <div class="card">
+        <div style="overflow-x: auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Reference</th>
+                        <th>Trip Details</th>
+                        <th>Destination</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% if (tickets.length === 0) { %>
+                        <tr>
+                            <td colspan="5" style="text-align: center; color: #94a3b8; padding: 60px;">
+                                No trip tickets found in the approval history.
+                            </td>
+                        </tr>
+                    <% } else { %>
+                        <% tickets.forEach(t => { %>
+                            <tr>
+                                <td>
+                                    <% if (t.status === 'Approved') { %>
+                                        <a href="/trip-tickets/print/<%= t.id %>" class="ticket-no" target="_blank">#<%= t.tt_number %></a>
+                                    <% } else { %>
+                                        <span style="color: var(--slate-800); font-weight: 700;">#<%= t.tt_number %></span>
+                                    <% } %>
+                                    <span class="info-label">Requested by: <%= t.created_by %></span>
+                                </td>
+                                <td>
+                                    <strong><%= t.vehicle_name %></strong>
+                                    <span class="info-label">Driver: <%= t.driver_name %></span>
+                                    <span class="info-label">Date: <%= new Date(t.trip_date).toLocaleDateString() %></span>
+                                </td>
+                                <td>
+                                    <strong><%= t.destination_to %></strong>
+                                    <span class="info-label">From: <%= t.destination_from %></span>
+                                    <p style="margin: 8px 0 0 0; font-size: 0.8rem; color: #64748b; font-style: italic;">
+                                        "<%= t.purpose %>"
+                                    </p>
+                                </td>
+                                <td>
+                                    <span class="status-badge status-<%= t.status %>"><%= t.status %></span>
+                                </td>
+                                <td>
+                                    <% if (t.status === 'Pending') { %>
+                                        <a href="/trip-tickets/approve/<%= t.id %>" class="btn-approve" onclick="return confirm('Approve this trip ticket?')">Approve</a>
+                                    <% } else { %>
+                                        <span style="color: #94a3b8; font-size: 0.75rem;">Processed</span>
+                                    <% } %>
+                                </td>
+                            </tr>
+                        <% }) %>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

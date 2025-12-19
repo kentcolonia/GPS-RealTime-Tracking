@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trip Tickets | FleetTrack</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        :root { --primary: #e74c3c; --dark: #2c3e50; --bg: #f4f7f9; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); margin: 0; }
+        .container { max-width: 1200px; margin: 20px auto; padding: 20px; background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .btn { padding: 10px 20px; border-radius: 6px; border: none; font-weight: 600; cursor: pointer; text-decoration: none; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-ghost { background: transparent; color: var(--dark); border: 1px solid #ddd; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
+        th { background: #f8f9fa; color: #666; font-size: 0.9em; }
+        .status-badge { padding: 4px 8px; border-radius: 12px; font-size: 0.8em; font-weight: bold; }
+        .status-Pending { background: #fef3c7; color: #92400e; }
+        .status-Approved { background: #d1fae5; color: #065f46; }
+        .status-Completed { background: #dbeafe; color: #1e40af; }
+
+        /* Modal Styles */
+        .modal { display: none; position: fixed; z-index: 2000; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; }
+        .modal-content { background: white; width: 90%; max-width: 800px; padding: 30px; border-radius: 12px; max-height: 90vh; overflow-y: auto; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .form-group { display: flex; flex-direction: column; gap: 5px; }
+        .full-width { grid-column: 1 / -1; }
+        input, select, textarea { padding: 10px; border: 1px solid #ddd; border-radius: 6px; }
+        
+        .autocomplete-suggestions { position: relative; }
+        .suggestions-box { position: absolute; background: white; border: 1px solid #ddd; width: 100%; z-index: 10; display: none; max-height: 200px; overflow-y: auto; }
+        .suggestion-item { padding: 10px; cursor: pointer; border-bottom: 1px solid #eee; }
+        .suggestion-item:hover { background: #f0f0f0; }
+        
+        /* New Print Button Style */
+        .btn-print { 
+            color: #fff; 
+            background-color: #2c3e50; 
+            border: none; 
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer; 
+            font-weight: bold; 
+            text-decoration: none; 
+            font-size: 0.8rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .btn-print:hover { background-color: #34495e; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <div>
+            <a href="/dashboard" class="btn btn-ghost">← Dashboard</a>
+            <h1 style="margin-top: 15px;">Travel Tickets</h1>
+        </div>
+        <div>
+            <!-- Added Link to Approvals for Admin -->
+            <% if (user.role === 'admin') { %>
+                <a href="/trip-tickets/approvals" class="btn btn-ghost" style="margin-right: 10px;">⭐ Approvals Dashboard</a>
+            <% } %>
+            <button class="btn btn-primary" onclick="openModal()">+ New Ticket</button>
+        </div>
+    </div>
+
+    <% if (success) { %><div style="color: green; margin-bottom: 10px;"><%= success %></div><% } %>
+    <% if (error) { %><div style="color: red; margin-bottom: 10px;"><%= error %></div><% } %>
+
+    <table>
+        <thead>
+            <tr>
+                <th>TT Number</th>
+                <th>Date</th>
+                <th>Vehicle</th>
+                <th>Driver</th>
+                <th>Destination</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% if (tickets.length === 0) { %>
+                <tr><td colspan="7" style="text-align: center;">No tickets found.</td></tr>
+            <% } else { %>
+                <% tickets.forEach(t => { %>
+                    <tr>
+                        <td>
+                            <strong><%= t.tt_number %></strong>
+                        </td>
+                        <td><%= new Date(t.trip_date).toLocaleDateString() %></td>
+                        <td><%= t.vehicle_name %></td>
+                        <td><%= t.driver_name %></td>
+                        <td><%= t.destination_from %> → <%= t.destination_to %></td>
+                        <td><span class="status-badge status-<%= t.status %>"><%= t.status %></span></td>
+                        <td>
+                            <!-- ACTION BUTTONS LOGIC -->
+                            
+                            <!-- 1. Print/PDF Button: Visible for EVERYONE if Approved -->
+                            <% if (t.status === 'Approved' || t.status === 'Completed') { %>
+                                <a href="/trip-tickets/print/<%= t.id %>" target="_blank" class="btn-print" title="Print to PDF">
+                                    🖨️ Print / PDF
+                                </a>
+                            <% } %>
+
+                            <!-- 2. Delete Button: Visible only if Pending -->
+                            <% if (t.status === 'Pending') { %>
+                                <form action="/trip-tickets/delete/<%= t.id %>" method="POST" onsubmit="return confirm('Delete this ticket?')" style="display: inline;">
+                                    <button type="submit" style="color: red; background: none; border: none; cursor: pointer;">Delete</button>
+                                </form>
+                            <% } %>
+                        </td>
+                    </tr>
+                <% }) %>
+            <% } %>
+        </tbody>
+    </table>
+</div>
+
+<!-- Modal -->
+<div id="ticketModal" class="modal">
+    <div class="modal-content">
+        <h2>Create Travel Ticket</h2>
+        <form action="/trip-tickets/create" method="POST">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Vehicle</label>
+                    <select name="vehicle_id" id="vehicleSelect" required>
+                        <option value="">-- Select --</option>
+                        <% vehicles.forEach(v => { %>
+                            <option value="<%= v.id %>"><%= v.plate_number %></option>
+                        <% }) %>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Trip Date</label>
+                    <input type="date" name="trip_date" value="<%= new Date().toISOString().split('T')[0] %>" required>
+                </div>
+                <div class="form-group">
+                    <label>Driver Name</label>
+                    <input type="text" name="driver_name" required>
+                </div>
+                <div class="form-group">
+                    <label>Custodian</label>
+                    <input type="text" name="custodian">
+                </div>
+                
+                <div class="form-group full-width autocomplete-suggestions">
+                    <label>From</label>
+                    <input type="text" name="destination_from" id="fromInput" autocomplete="off" required>
+                    <div id="fromSuggestions" class="suggestions-box"></div>
+                </div>
+
+                <div class="form-group full-width autocomplete-suggestions">
+                    <label>To</label>
+                    <input type="text" name="destination_to" id="toInput" autocomplete="off" required>
+                    <div id="toSuggestions" class="suggestions-box"></div>
+                </div>
+
+                <div class="form-group">
+                    <label>Start Odometer</label>
+                    <input type="number" name="start_odometer" id="startOdo" step="0.1">
+                </div>
+                <div class="form-group">
+                    <label>Purpose</label>
+                    <textarea name="purpose" rows="2" required></textarea>
+                </div>
+            </div>
+            <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end;">
+                <button type="button" class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary">Save Ticket</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    const MAPBOX_TOKEN = 'pk.eyJ1Ijoia2NvbG9uaWEiLCJhIjoiY21kN2FremVnMGtjajJscHlubXUxdTFkdiJ9.oNxOHXJ5jbHfYJxi3PTEKw';
+
+    function openModal() { document.getElementById('ticketModal').style.display = 'flex'; }
+    function closeModal() { document.getElementById('ticketModal').style.display = 'none'; }
+
+    // Odometer Fetching
+    document.getElementById('vehicleSelect').addEventListener('change', async (e) => {
+        const vId = e.target.value;
+        if (!vId) return;
+        const res = await fetch(`/trip-tickets/last-odometer/${vId}`);
+        const data = await res.json();
+        document.getElementById('startOdo').value = data.last_odometer || 0;
+    });
+
+    // Simple Autocomplete for Mapbox
+    function setupAutocomplete(inputId, suggestionsId) {
+        const input = document.getElementById(inputId);
+        const box = document.getElementById(suggestionsId);
+        let timer;
+
+        input.addEventListener('input', () => {
+            clearTimeout(timer);
+            const query = input.value;
+            if (query.length < 3) { box.style.display = 'none'; return; }
+
+            timer = setTimeout(async () => {
+                const res = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${MAPBOX_TOKEN}&country=PH&limit=5`);
+                const data = await res.json();
+                box.innerHTML = '';
+                data.features.forEach(f => {
+                    const item = document.createElement('div');
+                    item.className = 'suggestion-item';
+                    item.textContent = f.place_name;
+                    item.onclick = () => { input.value = f.place_name; box.style.display = 'none'; };
+                    box.appendChild(item);
+                });
+                box.style.display = 'block';
+            }, 300);
+        });
+    }
+
+    setupAutocomplete('fromInput', 'fromSuggestions');
+    setupAutocomplete('toInput', 'toSuggestions');
+</script>
+
+</body>
+</html>
